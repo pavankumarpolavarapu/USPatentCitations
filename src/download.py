@@ -9,9 +9,10 @@ def download_patent_file(df_file):
     
     path = os.path.join(storage_path, df_file["file"].values[0])
     print('Attempting to download {} to {}'.format(url, path))
-    cmd = 'curl -o {} {}'.format(path, url)
-    os.system(cmd)
+    #cmd = 'curl -o {} {}'.format(path, url)
+    #os.system(cmd)
     print("Unzipping the file {}".format(df_file["file"].values[0]))
+    print(path)
     zip_ref = zipfile.ZipFile(path, 'r')
     zip_ref.extractall(storage_path)
     zip_ref.close()
