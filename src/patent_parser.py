@@ -1,6 +1,8 @@
 import pandas as pd
 import os
 from lxml import etree
+from collections import OrderedDict, defaultdict
+import csv
 import pudb 
 
 def read_patent(file):
@@ -34,18 +36,49 @@ def patent_ends(pat_xml, file):
 def init_patent_processing(element, file):
     if(file.startswith("ipgb")):
         process_patent_version1(element)
+    elif fname.startswith('pgb'):
+        process_patent_version2(element)
 
 def process_patent_version1(element):
-    patent = element.find('us-bibliographic-data-grant') \
+    patent_number = element.find('us-bibliographic-data-grant') \
                     .find('publication-reference')\
                     .find('document-id')\
                     .find('doc-number').text
-    print(patent)
+
+    # citations
+    refs = element.find('us-bibliographic-data-grant').find('references-cited')
+    prefix = ''
+    if refs is None:
+        refs = element.find('us-bibliographic-data-grant').find('us-references-cited')
+        prefix = 'us-'
+
+    citations = []
+    if refs is not None:
+        for citation in refs.findall(prefix + 'citation'):
+            pcitation = citation.find('patcit')
+            if pcitation is not None:
+                docid = pcitation.find('document-id')
+                patent_num = result_or_default(docid, 'doc-number')
+                citations.append(patent_num)
+    patents = defaultdict(str)
+    patents['number'] = patent_number
+    patents['citations'] = citations
+    write_citations(patents)
+
+def process_patent_version2():
+    pass
+
+def process_patent_version3():
+    pass
 
 def clear(element):
     element.clear()
     while element.getprevious() is not None:
         del element.getparent()[0]
+
+def result_or_default(parent,tag,default=''):
+    result = parent.find(tag)
+    return (result.text or default) if result is not None else default
 
 def split_patents(path):
 	try:
@@ -65,3 +98,13 @@ def split_patents(path):
 		fw.close()
 	finally:
 		fp.close()	
+
+def write_citations(patents):
+    line = []
+    patent_number = patents['number']
+    print(patent_number)
+    with open('citations.csv', 'a') as writeFile:
+        writer = csv.writer(writeFile)
+        for citation in patents['citations']:
+            writer.writerow([patent_number, citation])
+    writeFile.close()
