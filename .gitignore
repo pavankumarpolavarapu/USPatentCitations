@@ -1,4 +1,5 @@
 *.pyc
 *.sqlite
 /src/data/*
+!/src/data/version*
 *.csv
